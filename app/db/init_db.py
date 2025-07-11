@@ -13,7 +13,7 @@ Plan
 '''
 import sqlite3
 
-async def conn_sqlite_db(db_url):
+async def connect_to_db(db_url):
     """
     Used to create a single connection to the database
     """
@@ -26,6 +26,8 @@ async def provide_db_session(conn):
     """
     pass
 
+async def close_db_coection():
+    pass
 
 async def close_db_session(session):
     """
