@@ -1,7 +1,6 @@
-
-# app/db/db_objects.py
 from dataclasses import dataclass
 from enum import Enum
+from datetime import datetime
 
 class Role(Enum):
     USER = "user"
@@ -10,87 +9,78 @@ class Role(Enum):
 
 @dataclass
 class User:
-    id: int
-    user_id: str
+    id: int                          # PK auto increment
+    user_uuid: str                   # business-level uuid string (optional)
     username: str
-    role : Role
+    role: Role
     email: str
     password: str
     is_active: bool
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
 @dataclass
 class Message:
     id: int
-    msg_id: str
-    title : str
+    message_uuid: str
+    title: str
     content: str
-    creator_id: str
-    created_at: str
-    updated_at: str
+    creator_id: int                  # FK → User.id
+    is_published: bool
+    created_at: datetime
+    updated_at: datetime
 
 @dataclass
-class Usermessages:
+class UserMessage:
     id: int
-    user_id: str
-    message_id: str
-    created_at: str
-    updated_at: str
+    user_id: int                     # FK → User.id
+    message_id: int                  # FK → Message.id
+    created_at: datetime
+    updated_at: datetime
 
 @dataclass
 class Tag:
     id: int
-    tagname: str
-    creator_id: str
-    created_at: str
-    updated_at: str
+    name: str
+    creator_id: int                  # FK → User.id
+    description: str
+    created_at: datetime
+    updated_at: datetime
 
 @dataclass
-class Usertags:
+class UserTag:
     id: int
-    user_id: str
-    tag_id: str
-    created_at: str
+    user_id: int
+    tag_id: int
+    created_at: datetime
 
 @dataclass
-class Messagetags:
+class MessageTag:
     id: int
-    message_id: str
-    tag_id: str
-    created_at: str
+    message_id: int
+    tag_id: int
+    created_at: datetime
 
 @dataclass
 class Comment:
     id: int
-    comment_id: str
+    comment_uuid: str
     content: str
-    creator_id: str
-    msg_id: str
-    created_at: str
+    creator_id: int                  # FK → User.id
+    message_id: int                  # FK → Message.id
+    created_at: datetime
+    updated_at: datetime
 
 @dataclass
-class Usercomments:
+class UserComment:
     id: int
-    user_id: str
-    comment_id: str
-    created_at: str
+    user_id: int
+    comment_id: int
+    created_at: datetime
 
 @dataclass
-class Mesaagecomments:
+class MessageComment:
     id: int
-    message_id: str
-    comment_id: str
-    created_at: str
-
-class DTOS(Enum):
-    user = user
-    message = Message
-    usermessages = Usermessages
-    tag = Tag
-    usertags = Usertags
-    messagetags = Messagetags
-    comment = Comment
-    usercomments = Usercomments
-    messagecomments = Mesaagecomments
-
+    message_id: int
+    comment_id: int
+    created_at: datetime
