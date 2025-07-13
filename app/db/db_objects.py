@@ -1,4 +1,3 @@
-
 # app/db/db_objects.py
 from dataclasses import dataclass
 from enum import Enum
@@ -11,9 +10,9 @@ class Role(Enum):
 @dataclass
 class User:
     id: int
-    user_id: str
+    user_uuid: str
     username: str
-    role : Role
+    role: Role
     email: str
     password: str
     is_active: bool
@@ -23,74 +22,62 @@ class User:
 @dataclass
 class Message:
     id: int
-    msg_id: str
-    title : str
+    message_uuid: str
+    title: str
     content: str
-    creator_id: str
+    creator_uuid: str
+    is_published: bool
     created_at: str
     updated_at: str
 
 @dataclass
-class Usermessages:
+class UserMessage:
     id: int
-    user_id: str
-    message_id: str
+    user_uuid: str
+    message_uuid: str
     created_at: str
     updated_at: str
 
 @dataclass
 class Tag:
     id: int
-    tagname: str
-    creator_id: str
+    tag_uuid: str
+    name: str
+    creator_uuid: str
+    description: str
     created_at: str
     updated_at: str
 
 @dataclass
-class Usertags:
+class UserTag:
     id: int
-    user_id: str
-    tag_id: str
+    user_uuid: str
+    tag_uuid: str
     created_at: str
+    updated_at: str
 
 @dataclass
-class Messagetags:
+class MessageTag:
     id: int
-    message_id: str
-    tag_id: str
+    message_uuid: str
+    tag_uuid: str
     created_at: str
+    updated_at: str
 
 @dataclass
 class Comment:
     id: int
-    comment_id: str
+    comment_uuid: str
     content: str
-    creator_id: str
-    msg_id: str
+    creator_uuid: str
+    message_uuid: str
     created_at: str
+    updated_at: str
 
 @dataclass
-class Usercomments:
+class MessageComment:
     id: int
-    user_id: str
-    comment_id: str
+    message_uuid: str
+    comment_uuid: str
     created_at: str
-
-@dataclass
-class Mesaagecomments:
-    id: int
-    message_id: str
-    comment_id: str
-    created_at: str
-
-class DTOS(Enum):
-    user = user
-    message = Message
-    usermessages = Usermessages
-    tag = Tag
-    usertags = Usertags
-    messagetags = Messagetags
-    comment = Comment
-    usercomments = Usercomments
-    messagecomments = Mesaagecomments
-
+    updated_at: str
