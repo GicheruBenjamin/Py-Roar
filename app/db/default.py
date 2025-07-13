@@ -1,12 +1,9 @@
-
 """
-Insert default admin users into the database.
+Inserts default admin users into DB.
 """
-
 from app.config import Log, config
 from app.utils.hash_password import hash_password
 
-# hardcoded defaults; passwords will be hashed at runtime
 DEFAULT_USERS_RAW = [
     {
         "user_uuid": "user-uuid-1",
@@ -32,38 +29,35 @@ DEFAULT_USERS_RAW = [
 
 async def add_default_users(conn):
     """
-    Add default admin users to the users table if not already present.
+    Insert default admin users.
     """
     try:
-        Log.info("🚀 Adding default admin users...")
-
+        Log.info("👥 Adding default admin users...")
         for user in DEFAULT_USERS_RAW:
             hashed_pwd = hash_password(user["password"])
             email = config.ADMIN_EMAILS[user["email_index"]]
 
             sql = """
-                INSERT OR IGNORE INTO users (
+                INSERT INTO users (
                     user_uuid, username, role, email, password, is_active, created_at, updated_at
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(email) DO NOTHING
             """
-
             params = (
                 user["user_uuid"],
                 user["username"],
                 user["role"],
                 email,
                 hashed_pwd,
-                int(user["is_active"]),  # SQLite uses 0/1
+                user["is_active"],
                 user["created_at"],
                 user["updated_at"]
             )
 
-            await conn.execute(sql, params)
+            conn.execute(sql, params)
             Log.info(f"✅ Added default user: {user['username']}")
-
-        Log.info("🎉 Default admin users added successfully.")
-
+        Log.info("✅ Default users added successfully.")
     except Exception as e:
         Log.error(f"❌ Failed to add default users: {e}")
         raise
