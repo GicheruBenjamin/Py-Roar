@@ -1,32 +1,28 @@
-
-
 """
-Initialize the database:
+Handles SQLite DB:
 - Connect
 - Run migrations
 - Add default data
-- Return db session
+- Provide db session
 """
-
 import sqlite3
 from typing import Optional
-from app.db.default import add_default_users
-from app.db.migrate import run_migrations
+from .migrate import run_migrations
+from .default import add_default_users
 from app.config import Log
 
-# Types
 DATABASE_CONNECTION = Optional[sqlite3.Connection]
 DATABASE_SESSION = Optional[sqlite3.Connection]
 
 async def connect_to_db(db_url: str) -> DATABASE_CONNECTION:
     """
-    Create a connection to the SQLite database.
+    Connect to SQLite DB.
     """
     try:
         Log.info(f"🔌 Connecting to database: {db_url}")
         db_path = db_url.replace("sqlite:///", "", 1)
         conn = sqlite3.connect(db_path, check_same_thread=False)
-        conn.row_factory = sqlite3.Row  # dict-like row access
+        conn.row_factory = sqlite3.Row
         Log.info("✅ Database connection established.")
         return conn
     except Exception as e:
@@ -35,33 +31,30 @@ async def connect_to_db(db_url: str) -> DATABASE_CONNECTION:
 
 async def provide_db_session(conn: DATABASE_CONNECTION) -> DATABASE_SESSION:
     """
-    Provide a db session (in sqlite, same as connection).
+    In sqlite3, conn itself acts as session.
     """
-    Log.info("📦 Providing DB session.")
+    Log.info("📦 Providing database session.")
     return conn
 
 async def init_sqlite_db(db_url: str) -> DATABASE_SESSION:
     """
-    Initialize the database:
-    - connect
-    - run migrations
-    - add default data
-    - return session
+    Init DB:
+    - Connect
+    - Run migrations
+    - Add default data
+    - Return session
     """
-    conn: DATABASE_CONNECTION = None
+    conn = None
     try:
+        Log.info("🚀 Initializing SQLite database...")
         conn = await connect_to_db(db_url)
-
-        Log.info("⚙️ Starting database initialization...")
-        conn.execute("BEGIN")
+        conn.execute("BEGIN;")
         await run_migrations(conn)
         await add_default_users(conn)
         conn.commit()
-
         session = await provide_db_session(conn)
-        Log.info("🎉 Database initialized successfully.")
+        Log.info("✅ Database initialized successfully.")
         return session
-
     except Exception as e:
         Log.error(f"❌ Failed to initialize database: {e}")
         if conn:
@@ -73,16 +66,17 @@ async def init_sqlite_db(db_url: str) -> DATABASE_SESSION:
 
 async def close_db_connection(conn: DATABASE_CONNECTION) -> None:
     """
-    Close the database connection.
+    Close db connection.
     """
     if conn:
         conn.close()
-        Log.info("🔒 Database connection closed.")
+        Log.info("🔌 Database connection closed.")
 
 async def close_db_session(session: DATABASE_SESSION) -> None:
     """
-    Close the db session (same as connection).
+    Close db session.
     """
     if session:
         session.close()
         Log.info("🔒 Database session closed.")
+
