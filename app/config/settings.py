@@ -8,7 +8,7 @@ from pathlib import Path
 # Define expected env vars
 EXPECTED_ENV_VARS = [
     "DATABASE_URL",
-    "ADMIN_EMAILS"
+    "ADMIN_"
 ]
 
 @dataclass
