@@ -72,3 +72,5 @@ def LogConfig() -> Log:
         warning=logger.warning,
         critical=logger.critical
     )
+
+Log = LogConfig()
