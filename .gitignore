@@ -5,3 +5,5 @@ __pycache__*
 .env
 *.sqlite3
 *.sqlite3-journal
+poetry.lock
+.venv
