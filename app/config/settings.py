@@ -1,79 +1,84 @@
-# app/config.py
+
+# app/config/settings.py
 import os
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 from pathlib import Path
+from .log_config import Log
 
-# Define expected env vars
-EXPECTED_ENV_VARS = [
-    "DATABASE_URL",
-    "ADMIN_EMAILS"
-]
+# === ENV FILE PATH ===
+ENV_PATH = ".env"
+
+# === Basic email regex ===
+EMAIL_REGEX = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
 
 @dataclass
 class Config:
     DATABASE_URL: str
-    ADMIN_EMAILS: List[str]
+    ADMIN_ONE_EMAIL: str
+    ADMIN_ONE_PASSWORD: str
+    ADMIN_TWO_EMAIL: str
+    ADMIN_TWO_PASSWORD: str
 
 
-def parse_admin_emails(raw: str) -> List[str]:
+def load_env_file(filepath: str = ENV_PATH) -> None:
     """
-    Parses a comma-separated list of emails and validates basic format.
+    Load .env file into os.environ if not already set.
+    Ignores blank lines and comments.
     """
-    emails = [email.strip().strip('"').strip("'") for email in raw.split(",")]
-    # Optional: validate emails with a simple regex
-    email_pattern = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
-    for email in emails:
-        if not email_pattern.match(email):
-            raise ValueError(f"Invalid email format: {email}")
-    return emails
+    path = Path(filepath)
+    if not path.exists():
+        raise FileNotFoundError(f"⚠️ .env file not found at: {filepath}")
 
-
-def load_env_file(filepath: str = ".env") -> None:
-    """
-    Manually loads .env file into os.environ
-    """
-    env_path = Path(filepath)
-    if not env_path.exists():
-        raise FileNotFoundError(f".env file not found at {filepath}")
-    
-    with env_path.open() as f:
-        for line in f:
-            # Ignore comments and empty lines
-            if line.strip() == "" or line.strip().startswith("#"):
+    with path.open() as file:
+        for line in file:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
                 continue
-            # Parse key=value
-            if '=' in line:
-                key, value = line.strip().split("=", 1)
-                # Remove surrounding quotes if any
-                cleaned_value = value.strip().strip('"').strip("'")
-                os.environ.setdefault(key, cleaned_value)
+            key, value = line.split("=", 1)
+            cleaned = value.strip().strip('"').strip("'")
+            os.environ.setdefault(key.strip(), cleaned)
 
 
-def load_config() -> Optional[Config]:
+def validate_email(email: str, var_name: str) -> None:
     """
-    Load and validate config from environment variables.
-    Returns Config instance or raises error if missing / invalid.
+    Validate email format.
     """
-    # Step 1: Load .env first (if present)
+    if not EMAIL_REGEX.match(email):
+        raise ValueError(f"❌ Invalid email format in {var_name}: '{email}'")
+
+
+def load_config() -> Config:
+    """
+    Load config from environment variables, validate, and return Config instance.
+    Raises errors if required values are missing or invalid.
+    """
     try:
         load_env_file()
     except Exception as e:
-        print(f"Warning: failed to load .env file: {e}")
+        Log.error(f"⚠️ Skipped .env loading: {e}")
 
-    # Step 2: Check required vars
-    missing_vars = [var for var in EXPECTED_ENV_VARS if var not in os.environ]
-    if missing_vars:
-        raise EnvironmentError(f"Missing required env vars: {missing_vars}")
+    required_vars = [
+        "DATABASE_URL",
+        "ADMIN_ONE_EMAIL",
+        "ADMIN_ONE_PASSWORD",
+        "ADMIN_TWO_EMAIL",
+        "ADMIN_TWO_PASSWORD"
+    ]
 
-    # Step 3: Parse and validate values
-    database_url = os.environ["DATABASE_URL"]
-    raw_admin_emails = os.environ["ADMIN_EMAILS"]
-    admin_emails = parse_admin_emails(raw_admin_emails)
+    missing = [var for var in required_vars if var not in os.environ]
+    if missing:
+        raise EnvironmentError(f"❌ Missing required env vars: {missing}")
 
-    # Step 4: Return config object
+    # Validate emails
+    validate_email(os.environ["ADMIN_ONE_EMAIL"], "ADMIN_ONE_EMAIL")
+    validate_email(os.environ["ADMIN_TWO_EMAIL"], "ADMIN_TWO_EMAIL")
+
     return Config(
-        DATABASE_URL=database_url,
-        ADMIN_EMAILS=admin_emails
+        DATABASE_URL=os.environ["DATABASE_URL"],
+        ADMIN_ONE_EMAIL=os.environ["ADMIN_ONE_EMAIL"],
+        ADMIN_ONE_PASSWORD=os.environ["ADMIN_ONE_PASSWORD"],
+        ADMIN_TWO_EMAIL=os.environ["ADMIN_TWO_EMAIL"],
+        ADMIN_TWO_PASSWORD=os.environ["ADMIN_TWO_PASSWORD"]
     )
