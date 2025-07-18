@@ -1,18 +1,26 @@
 
+
 # app/db/sql/default.py
 
 import aiosqlite
 from app.utils import _default_users
 from app.config import Log
 
+
 async def add_default_users(session: aiosqlite.Connection) -> bool:
     """
-    Use the session to insert default users into the DB.
-    Returns True on success, False on failure.
+    Insert default users into the 'users' table.
+    Uses INSERT OR IGNORE to avoid duplicate user_uuid/email conflicts.
+    Returns True on full success, False if any error occurs.
     """
-    Log.info("Adding default users to the DB")
+    Log.info("Starting to insert default users...")
+
     try:
+        await session.execute("BEGIN")
+
         for user in _default_users:
+            Log.info(f"Inserting user: {user['username']} ({user['user_uuid']})")
+
             await session.execute(
                 """
                 INSERT OR IGNORE INTO users 
@@ -31,10 +39,12 @@ async def add_default_users(session: aiosqlite.Connection) -> bool:
                     user["updated_at"],
                 ),
             )
-            Log.info(f"Default user added successfully: {user['username']}")
+
         await session.commit()
+        Log.info("All default users inserted successfully ✅")
         return True
+
     except Exception as e:
         await session.rollback()
-        Log.error(f"Failed to add default users: {e}")
+        Log.error(f"Failed to insert default users ❌: {e}")
         return False
