@@ -1,32 +1,32 @@
-
 # app/db/sql/migration.py
 
-import sqlite
+import sqlite3
 from .migration_ddl import DDL_STATEMENTS
 from app.config import Log
+from .types import SQLITEDBSESSION
 
-
-async def migrate_sqlite_db(session) -> bool:
+def migrate_sqlite_db(session: SQLITEDBSESSION) -> bool:
     """
     Migrate the SQLite database using the DDL_STATEMENTS.
     Uses a single-connection session.
     Returns True if migration succeeds, False otherwise.
     """
+
+    Log.info("Beginning migration transaction...")
     try:
-        Log.info("Beginning migration transaction...")
-        await session.execute("BEGIN")
+        session.execute("BEGIN")
 
         for statement in DDL_STATEMENTS:
             preview = statement.strip().splitlines()[0].strip()
             Log.info(f"Executing DDL: {preview}")
-            await session.executescript(statement)
+            session.executescript(statement)
             Log.info(f"Success: {preview}")
 
-        await session.commit()
+        session.commit()
         Log.info("Migration committed successfully ✅")
         return True
 
     except Exception as e:
-        await session.rollback()
+        session.rollback()
         Log.error(f"Migration failed and rolled back ❌: {e}")
         return False
