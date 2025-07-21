@@ -1,7 +1,6 @@
 
 # app/db/sql/init_db.py
 
-import aiosqlite
 from app.config import Log
 from .migration import migrate_sqlite_db
 from .default import add_default_users
