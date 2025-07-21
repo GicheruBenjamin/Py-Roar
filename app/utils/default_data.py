@@ -1,5 +1,5 @@
 
-from app.config import config
+from app.config import CONFIG
 from .hash_password import hash_password
 import uuid
 from datetime import datetime   
@@ -11,8 +11,8 @@ _default_users = [
         "user_uuid": str(uuid.uuid4()),
         "username": "admin",
         "role": "admin",
-        "email": config.ADMIN_ONE_EMAIL,
-        "password": hash_password(config.ADMIN_ONE_PASSWORD),
+        "email": CONFIG.ADMIN_ONE_EMAIL,
+        "password": hash_password(CONFIG.ADMIN_ONE_PASSWORD),
         "is_active": True,
         "created_at": datetime.now(),
         "updated_at": datetime.now()
@@ -22,8 +22,8 @@ _default_users = [
         "user_uuid": str(uuid.uuid4()),
         "username": "user",
         "role": "user",
-        "email": config.ADMIN_TWO_EMAIL,
-        "password": hash_password(config.ADMIN_TWO_PASSWORD),
+        "email": CONFIG.ADMIN_TWO_EMAIL,
+        "password": hash_password(CONFIG.ADMIN_TWO_PASSWORD),
         "is_active": True,
         "created_at": datetime.now(),
         "updated_at": datetime.now()

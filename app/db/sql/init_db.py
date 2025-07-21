@@ -1,57 +1,67 @@
-
 # app/db/sql/init_db.py
-
+import sqlite3
 from app.config import Log
 from .migration import migrate_sqlite_db
 from .default import add_default_users
-
-# Type alias for SQLite session
-SQLITEDBSESSION = aiosqlite.Connection
+from .types import SQLITEDBSESSION, SQLITEDBPOOL
 
 
-async def create_single_connection_db_session(url: str) -> SQLITEDBSESSION:
+def create_single_connection_db_session(url: str) -> SQLITEDBSESSION:
     """
     Create a single-connection DB session for initial setup.
     """
     Log.info("🔧 Opening single-connection DB session")
-    session = await aiosqlite.connect(url)
-    session.row_factory = aiosqlite.Row
-    return session
+    try:
+        conn = sqlite3.connect(url)
+        conn.row_factory = sqlite3.Row  # optional: for dict-like row access
+        Log.success("✅ Single DB session opened")
+        return conn
+    except sqlite3.Error as e:
+        Log.error(f"❌ Failed to open DB session: {e}")
+        return None
 
 
-async def close_single_connection_db_session(session: SQLITEDBSESSION) -> None:
+def close_single_connection_db_session(session: SQLITEDBSESSION) -> None:
     """
     Close a single-connection DB session.
     """
-    Log.info("🔒 Closing single-connection DB session")
-    await session.close()
+    if session:
+        session.close()
+        Log.info("🔒 Single-connection DB session closed")
 
 
-async def create_multi_connection_db_session(
-    url: str, pool_size: int = 100
-) -> list[SQLITEDBSESSION]:
+def create_multi_connection_db_session(url: str, pool_size: int = 100) -> SQLITEDBPOOL:
     """
     Create a simulated connection pool (list of DB sessions) for concurrent app usage.
     """
     Log.info(f"🚀 Creating multi-connection pool (size={pool_size})")
-    sessions: list[SQLITEDBSESSION] = []
-    for _ in range(pool_size):
-        conn = await aiosqlite.connect(url, check_same_thread=False)
-        conn.row_factory = aiosqlite.Row
-        sessions.append(conn)
-    return sessions
+    pool = []
+    for i in range(pool_size):
+        try:
+            conn = sqlite3.connect(url, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            pool.append(conn)
+        except sqlite3.Error as e:
+            Log.error(f"❌ Failed to create connection #{i + 1}: {e}")
+    Log.success(f"✅ Connection pool created with {len(pool)} sessions")
+    return pool
 
 
-async def close_multi_connection_db_session(sessions: list[SQLITEDBSESSION]) -> None:
+def close_multi_connection_db_session(sessions: SQLITEDBPOOL) -> None:
     """
     Gracefully close all connections in the simulated pool.
     """
     Log.info("🧯 Closing multi-connection pool")
-    for session in sessions:
-        await session.close()
+    if sessions:
+        for i, conn in enumerate(sessions):
+            try:
+                conn.close()
+            except sqlite3.Error as e:
+                Log.error(f"❌ Failed to close pool connection #{i + 1}: {e}")
+    Log.info("✅ Multi-connection pool closed")
 
 
-async def init_sqlite_db(url: str) -> list[SQLITEDBSESSION]:
+def init_sqlite_db(url: str, pool_size: int = 100) -> SQLITEDBPOOL:
     """
     Full database setup pipeline:
     1. Create single session for migration & seeding
@@ -63,23 +73,28 @@ async def init_sqlite_db(url: str) -> list[SQLITEDBSESSION]:
     Log.info("🛠️ Starting full database initialization")
 
     # Step 1: Single connection session
-    single = await create_single_connection_db_session(url)
+    session = create_single_connection_db_session(url)
+    if not session:
+        Log.error("❌ Aborting: could not open DB for setup.")
+        return []
 
     # Step 2: Run migrations
-    if not await migrate_sqlite_db(single):
-        await close_single_connection_db_session(single)
-        raise RuntimeError("❌ DB migration failed")
+    if not migrate_sqlite_db(session):
+        close_single_connection_db_session(session)
+        Log.error("❌ Aborting: migration failed.")
+        return []
 
     # Step 3: Insert default data
-    if not await add_default_users(single):
-        await single.rollback()
-        await close_single_connection_db_session(single)
-        raise RuntimeError("❌ Default user insertion failed")
+    if not add_default_users(session):
+        close_single_connection_db_session(session)
+        Log.error("❌ Aborting: failed to seed default data.")
+        return []
 
     # Step 4: Close setup session
-    await close_single_connection_db_session(single)
+    close_single_connection_db_session(session)
 
     # Step 5: Create pool
-    pool = await create_multi_connection_db_session(url)
-    Log.info("✅ Database initialization complete")
+    pool = create_multi_connection_db_session(url, pool_size)
+    Log.success("✅ Database initialization complete")
+
     return pool

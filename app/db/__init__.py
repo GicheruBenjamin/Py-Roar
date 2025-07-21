@@ -1,24 +1,29 @@
-
 # app/db/__init__.py
 
-import asyncio
-from .sql import init_sqlite_db, close_multi_connection_db_session, SQLITEDBSESSION
+from .sql import SQLITEDBPOOL, init_sqlite_db, close_multi_connection_db_session
 from dataclasses import dataclass
-from app.config import config 
+from app.config import Configtype,CONFIG
 
 @dataclass
-class Databases:
-    """Databaes available for use in the app"""
-    sqlite: SQLITEDBSESSION
+class DB:
+    SQLITEDB: SQLITEDBPOOL
 
-async def init_db(c) -> Databases:
-    """Initialize the database"""
-    db = await init_sqlite_db(c.DATABASE_URL)
-    return Databases(sqlite=db)
+def init_dbs(c : Configtype) -> DB:
+    """
+    Initializes the database connection pool.
+    Returns a DB dataclass with the pools.
+    """
+    Sqlitedatabase = init_sqlite_db(c.DATABASE_URL)
+    return DB(
+        SQLITEDB=Sqlitedatabase
+    )
 
-DBS = asyncio.run(init_db(config))
+DBS = init_dbs(CONFIG)
 
 __all__ = [
-    "Databases",
-    "DBS"
+    "DBS",
+    "close_multi_connection_db_session",
 ]
+
+
+
