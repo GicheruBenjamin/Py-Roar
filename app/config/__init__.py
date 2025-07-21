@@ -1,12 +1,13 @@
 
 # app/config/__init__.py
-# Init config and logging appropriately
-from .settings import load_config
-from .log_config import Log
 
-config = load_config()
+from .settings import CONFIG
+from .log_config import Log
+from .types import Configtype
+
 
 __all__ = [
-    "config",
+    "CONFIG",
+    "Configtype",
     "Log"
 ]

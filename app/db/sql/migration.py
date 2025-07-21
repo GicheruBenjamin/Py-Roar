@@ -1,12 +1,12 @@
 
 # app/db/sql/migration.py
 
-import aiosqlite
+import sqlite
 from .migration_ddl import DDL_STATEMENTS
 from app.config import Log
 
 
-async def migrate_sqlite_db(session: aiosqlite.Connection) -> bool:
+async def migrate_sqlite_db(session) -> bool:
     """
     Migrate the SQLite database using the DDL_STATEMENTS.
     Uses a single-connection session.

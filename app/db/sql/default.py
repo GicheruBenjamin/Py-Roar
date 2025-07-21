@@ -7,7 +7,7 @@ from app.utils import _default_users
 from app.config import Log
 
 
-async def add_default_users(session: aiosqlite.Connection) -> bool:
+async def add_default_users(session) -> bool:
     """
     Insert default users into the 'users' table.
     Uses INSERT OR IGNORE to avoid duplicate user_uuid/email conflicts.
