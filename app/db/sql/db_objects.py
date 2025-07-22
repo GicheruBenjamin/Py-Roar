@@ -1,9 +1,7 @@
 # app/db/sql/db_objects.py
-
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-
 
 class Role(Enum):
     USER = "user"

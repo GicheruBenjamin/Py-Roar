@@ -1,6 +1,11 @@
 # app/db/sql/migration_ddl.py
 
-# Users Table
+# Step 1: Enable foreign key enforcement
+enable_foreign_keys: str = """
+PRAGMA foreign_keys = ON;
+"""
+
+# Step 2: Table definitions
 create_users_table: str = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -16,7 +21,6 @@ CREATE TABLE IF NOT EXISTS users (
 );
 """
 
-# Messages Table
 create_messages_table: str = """
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +39,6 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 """
 
-# UserMessages Table
 create_user_messages_table: str = """
 CREATE TABLE IF NOT EXISTS user_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +52,6 @@ CREATE TABLE IF NOT EXISTS user_messages (
 );
 """
 
-# Tags Table
 create_tags_table: str = """
 CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +69,6 @@ CREATE TABLE IF NOT EXISTS tags (
 );
 """
 
-# UserTags Table
 create_user_tags_table: str = """
 CREATE TABLE IF NOT EXISTS user_tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,7 +86,6 @@ CREATE TABLE IF NOT EXISTS user_tags (
 );
 """
 
-# MessageTags Table
 create_message_tags_table: str = """
 CREATE TABLE IF NOT EXISTS message_tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,7 +103,6 @@ CREATE TABLE IF NOT EXISTS message_tags (
 );
 """
 
-# Comments Table
 create_comments_table: str = """
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,7 +120,6 @@ CREATE TABLE IF NOT EXISTS comments (
 );
 """
 
-# MessageComments Table
 create_message_comments_table: str = """
 CREATE TABLE IF NOT EXISTS message_comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,7 +133,7 @@ CREATE TABLE IF NOT EXISTS message_comments (
 );
 """
 
-# Extra indexes for performance
+# Step 3: Indexes for performance
 create_indexes: str = """
 CREATE INDEX IF NOT EXISTS idx_users_user_uuid ON users(user_uuid);
 CREATE INDEX IF NOT EXISTS idx_messages_message_uuid ON messages(message_uuid);
@@ -150,8 +148,61 @@ CREATE INDEX IF NOT EXISTS idx_message_tags_message_uuid ON message_tags(message
 CREATE INDEX IF NOT EXISTS idx_message_tags_tag_uuid ON message_tags(tag_uuid);
 """
 
-# DDL statements
+# Step 4: Triggers for updated_at auto-update
+create_updated_at_triggers: str = """
+-- Automatically update `updated_at` on any UPDATE
+CREATE TRIGGER IF NOT EXISTS trg_users_updated_at
+AFTER UPDATE ON users
+BEGIN
+    UPDATE users SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_messages_updated_at
+AFTER UPDATE ON messages
+BEGIN
+    UPDATE messages SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tags_updated_at
+AFTER UPDATE ON tags
+BEGIN
+    UPDATE tags SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_comments_updated_at
+AFTER UPDATE ON comments
+BEGIN
+    UPDATE comments SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_user_messages_updated_at
+AFTER UPDATE ON user_messages
+BEGIN
+    UPDATE user_messages SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_user_tags_updated_at
+AFTER UPDATE ON user_tags
+BEGIN
+    UPDATE user_tags SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_message_tags_updated_at
+AFTER UPDATE ON message_tags
+BEGIN
+    UPDATE message_tags SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_message_comments_updated_at
+AFTER UPDATE ON message_comments
+BEGIN
+    UPDATE message_comments SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
+"""
+
+# Final: All DDL statements ordered
 DDL_STATEMENTS: list = [
+    enable_foreign_keys,
     create_users_table,
     create_messages_table,
     create_user_messages_table,
@@ -160,5 +211,6 @@ DDL_STATEMENTS: list = [
     create_message_tags_table,
     create_comments_table,
     create_message_comments_table,
-    create_indexes
+    create_indexes,
+    create_updated_at_triggers
 ]
